@@ -34,6 +34,7 @@ import { LogoContext } from "./context/LogoContext";
 import History from "./pages/History";
 import FormulaEditForm from "./pages/FormulaDetailsEdit";
 import { DosingProvider } from "./pages/DosingContext";
+import FormulaViewDetails from "./pages/FormulaViewDetails";
 
 // Layout component for shared UI like Sidebar/Topbar
 function Layout({ children }) {
@@ -76,7 +77,8 @@ function AppRoutes() {
         <Route path="/recipes" element={<Recipes />} />
         <Route path="/recipes/edit/:recipe_id" element={<RecipeEditForm />} />
         <Route path="/formula-details/edit/:recipe_id" element={<FormulaEditForm />} />
-        <Route path="/recipes/:recipe_id" element={<ViewRecipe />} />
+        <Route path="/recipes/view/:recipe_id" element={<FormulaViewDetails />} />
+
         <Route path="/batches" element={<Batches />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/storage" element={<Bucket_Batches />} />

@@ -412,7 +412,7 @@ const MySwal = withReactContent(Swal);
                         mr: 1,
                       }}
                       size="medium"
-                      onClick={() => navigate(`/recipes/${recipe.recipe_id}`)}
+                      onClick={() => navigate(`/recipes/view/${recipe.recipe_id}`)}
                     >
                       <VisibilityIcon />
                     </IconButton>
@@ -651,131 +651,7 @@ const MySwal = withReactContent(Swal);
                 </Box>
               </Grid>
 
-              {/* Recipe Selection */}
-              {/* <Grid item xs={12} md={3}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Formula *
-                </Typography>
-                <FormControl sx={{ minWidth: "350px" }}>
-                  <InputLabel>Recipe</InputLabel>
-                  <Select
-                    name="recipe_id"
-                    value={formData.recipe_id || ""}
-                    onChange={handleRecipeChange}
-                    label="Recipe"
-                  >
-                    <MenuItem value="">Select a recipe</MenuItem>
-                    {recipes.map((recipe) => (
-                      <MenuItem key={recipe.recipe_id} value={recipe.recipe_id}>
-                        {recipe.name || "Unnamed Recipe"}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid> */}
-
-              {/* Material Selection */}
-              {/* Material Selection - Full Row */}
-              {/* <Grid item xs={12} md={3}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Material *
-                </Typography>
-                <FormControl sx={{ minWidth: "350px" }}>
-                  <InputLabel>Material</InputLabel>
-                  <Select
-                    name="material_id"
-                    value={selectedMaterial.material_id}
-                    onChange={handleMaterialChange}
-                    label="Material"
-                  >
-                    <MenuItem value="">Select a material</MenuItem>
-                    {materials.map((material) => (
-                      <MenuItem
-                        key={material.material_id}
-                        value={material.material_id}
-                      >
-                        {material.title || "Unnamed Material"}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid> */}
-
-              {/* Force New Line for Quantity + Sequence Number + Add Button */}
-              {/* <Grid item xs={12} /> */}
-
-              {/* Quantity */}
-              {/* <Grid item xs={12} md={3}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Quantity *
-                </Typography>
-                <TextField
-                  fullWidth
-                  name="quantity"
-                  type="number"
-                  value={selectedMaterial.quantity}
-                  onChange={handleMaterialChange}
-                  sx={{ minWidth: "350px" }}
-                />
-              </Grid> */}
-
-              {/* Sequence Number */}
-              {/* <Grid item xs={12} md={3}>
-              <Typography variant="subtitle2" gutterBottom>
-  Sequence Number *
-</Typography>
-<TextField
-  fullWidth
-  name="sequence_number"
-  type="number"
-  value={selectedMaterial.sequence_number || 0} // Display sequence number, default to 0 if not set
-  onChange={handleMaterialChange} // You may not need this, as the sequence number will be auto-calculated
-  sx={{ minWidth: "350px" }}
-  InputProps={{
-    readOnly: true, // Prevent user from changing the sequence number
-  }}
-/>
-
-              </Grid> */}
-
-              {/* Add Button */}
-              {/* <Grid
-                item
-                xs={12}
-                md={2}
-                sx={{ display: "flex", alignItems: "flex-end" }}
-              >
-                <Button
-                  fullWidth
-                  variant="contained"
-                  color="primary"
-                  startIcon={<AddIcon />}
-                  onClick={addMaterial}
-                  sx={{ minWidth: "150px" }}
-                >
-                  Add
-                </Button>
-              </Grid> */}
-
-              {/* Selected Materials */}
-              {/* {formData.materials.length > 0 && (
-                <Grid item xs={12}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Selected Materials
-                  </Typography>
-                  <Box component="ul" sx={{ pl: 2 }}>
-                    {formData.materials.map((mat, index) => (
-                      <Box
-                        component="li"
-                        key={index}
-                        sx={{ typography: "body2" }}
-                      >
-                        {`Material ID: ${mat.material_id}, Quantity: ${mat.quantity}, Sequence: ${mat.sequence_number}`}
-                      </Box>
-                    ))}
-                  </Box>
-                </Grid>
-              )} */}
+            
             </Grid>
           </Box>
         </DialogContent>
