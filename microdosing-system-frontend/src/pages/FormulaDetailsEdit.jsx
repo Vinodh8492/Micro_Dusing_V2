@@ -95,32 +95,76 @@ const FormulaEditForm = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Fetch recipe data
-    axios
-      .get(`http://127.0.0.1:5000/api/recipes/${recipe_id}`)
-      .then((response) => {
+    const fetchRecipeAndMaterials = async () => {
+      try {
+        // Step 1: Fetch recipe data
+        const recipeResponse = await axios.get(`http://127.0.0.1:5000/api/recipes/${recipe_id}`);
+        const fetchedRecipe = recipeResponse.data;
+  
+        // Extract no_of_materials from recipe data
+        const noOfMaterials = fetchedRecipe.no_of_materials ? Number(fetchedRecipe.no_of_materials) : 0;
+  
         setRecipe((prev) => ({
           ...prev,
-          ...response.data, // Merge the fetched recipe data
+          ...fetchedRecipe,
+          no_of_materials: noOfMaterials,
         }));
-      })
-      .catch((error) => {
+  
+        // Step 2: Fetch recipe materials data (check if there are any materials for this recipe_id)
+        try {
+          const materialsResponse = await axios.get(`http://127.0.0.1:5000/api/recipe_materials/${recipe_id}`);
+          
+          // If materials exist, set them to state
+          if (materialsResponse.data.length > 0) {
+            setRecipe((prev) => ({
+              ...prev,
+              materials: materialsResponse.data,
+            }));
+          } else {
+            // No materials found, generate empty fields
+            if (noOfMaterials > 0) {
+              const emptyMaterials = Array.from({ length: noOfMaterials }, (_, index) => ({
+                recipe_material_id: `new-${index}`, // temporary unique key
+                material_id: '',
+                storage: '',
+                set_point: '',
+                status: '',
+              }));
+  
+              setRecipe((prev) => ({
+                ...prev,
+                materials: emptyMaterials,
+              }));
+            }
+          }
+        } catch (materialsError) {
+          console.error("Error fetching recipe materials:", materialsError);
+          // Handle the error by showing empty fields if no data is found
+          if (noOfMaterials > 0) {
+            const emptyMaterials = Array.from({ length: noOfMaterials }, (_, index) => ({
+              recipe_material_id: `new-${index}`, // temporary unique key
+              material_id: '',
+              storage: '',
+              set_point: '',
+              status: '',
+            }));
+  
+            setRecipe((prev) => ({
+              ...prev,
+              materials: emptyMaterials,
+            }));
+          }
+        }
+      } catch (error) {
         console.error("Error fetching recipe:", error);
-      });
-
-    // Fetch recipe materials by recipe_id
-    axios
-      .get(`http://127.0.0.1:5000/api/recipe_materials/${recipe_id}`)
-      .then((response) => {
-        setRecipe((prev) => ({
-          ...prev,
-          materials: response.data, // Set materials data for the recipe
-        }));
-      })
-      .catch((error) => {
-        console.error("Error fetching recipe materials:", error);
-      });
+      }
+    };
+  
+    fetchRecipeAndMaterials();
   }, [recipe_id]);
+  
+  
+  
 
   const handleChange = (e) => {
     setRecipe({ ...recipe, [e.target.name]: e.target.value });
@@ -130,31 +174,43 @@ const FormulaEditForm = () => {
     e.preventDefault();
   
     try {
-      // Iterate through each material and send update request
-      const updatePromises = recipe.materials.map((material) => {
-        const { recipe_material_id, material_id, set_point, status } = material;
+      const submissionPromises = recipe.materials.map((material) => {
+        const { recipe_material_id, material_id, set_point, status, storage } = material;
+
+        console.log("material :", material)
   
-        return axios.put(`http://127.0.0.1:5000/api/recipe_materials/${recipe_material_id}`, {
-          material_id,
-          set_point,
+        const payload = {
+          recipe_id: parseInt(recipe_id, 10),   // Convert recipe_id to integer
+          material_id: parseInt(material_id, 10),
+          set_point: parseFloat(set_point),
           status,
-        });
+          storage,
+          actual : 0
+        };
+  
+        // If material is new (created on UI with dummy ID), do POST
+        if (recipe_material_id.toString().startsWith('new')) {
+          return axios.post(`http://127.0.0.1:5000/api/recipe_materials`, payload);
+        }
+  
+        // Else it's an existing material, do PUT
+        return axios.put(`http://127.0.0.1:5000/api/recipe_materials/${recipe_material_id}`, payload);
       });
   
-      // Wait for all requests to complete
-      await Promise.all(updatePromises);
+      await Promise.all(submissionPromises);
   
-      alert("All recipe materials updated successfully");
-      navigate("/formula-details");
+      alert("Recipe materials saved successfully!");
+      navigate(-1);
     } catch (error) {
-      console.error("Error updating materials:", error);
-      alert("Failed to update some or all materials.");
+      console.error("Error saving materials:", error);
+      alert("Failed to save some or all materials.");
     }
   };
   
+  
 
   const handleCancel = () => {
-    navigate("/formula-details"); // Navigate to the recipe list page or wherever you'd like
+    navigate(-1); // Navigate to the recipe list page or wherever you'd like
   };
 
 
@@ -174,95 +230,6 @@ const FormulaEditForm = () => {
 
   return (
     <Paper elevation={3} sx={{ maxWidth: 900, margin: "auto", mt: 4, p: 3 }}>
-      {/* <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6">Edit Formula</Typography>
-        <IconButton
-          onClick={handleCancel}
-          sx={{
-            border: '1px solid red',
-            borderRadius: '50%',
-            padding: '6px',
-            height: '40px',
-            width: '40px',
-          }}
-        >
-          <CloseIcon sx={{ color: 'red' }} />
-        </IconButton>
-      </Box> */}
-
-      {/* Recipe Data Form */}
-      {/* <Box component="form" onSubmit={handleSubmit} noValidate autoComplete="off">
-        <TextField
-          fullWidth
-          label="Name"
-          name="name"
-          value={recipe.name}
-          onChange={handleChange}
-          required
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="Code"
-          name="code"
-          value={recipe.code}
-          onChange={handleChange}
-          required
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          multiline
-          rows={4}
-          label="Description"
-          name="description"
-          value={recipe.description}
-          onChange={handleChange}
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="No of Materials"
-          name="no_of_materials"
-          type="number"
-          value={recipe.no_of_materials}
-          onChange={handleChange}
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="Version"
-          name="version"
-          value={recipe.version}
-          onChange={handleChange}
-          required
-          margin="normal"
-        />
-        <FormControl fullWidth margin="normal">
-          <InputLabel>Status</InputLabel>
-          <Select
-            name="status"
-            value={recipe.status}
-            onChange={handleChange}
-            label="Status"
-          >
-            <MenuItem value="Released">Released</MenuItem>
-            <MenuItem value="Unreleased">Unreleased</MenuItem>
-          </Select>
-        </FormControl>
-
-        <Button variant="contained" type="submit" fullWidth sx={{ mt: 2 }}>
-          Update Recipe
-        </Button>
-        <Button
-          variant="outlined"
-          onClick={handleCancel}
-          fullWidth
-          sx={{ mt: 2, marginTop : '12px' }}
-        >
-          Back
-        </Button>
-      </Box> */}
 
       {/* Recipe Materials Table */}
       <Box mt={4} p={3} sx={{ backgroundColor: "#f9f9f9", borderRadius: 2 }}>
@@ -284,105 +251,105 @@ const FormulaEditForm = () => {
             </TableHead>
 
             <TableBody>
-              {recipe.materials.map((material) => (
-                <TableRow key={material.recipe_material_id} hover>
-                  {/* Reorder Placeholder */}
-                  <TableCell>
-                    {/* Optionally add icons like ↑ ↓ here */}
-                    <IconButton size="small"><ArrowUpward fontSize="small" /></IconButton>
-                    <IconButton size="small"><ArrowDownward fontSize="small" /></IconButton>
-                  </TableCell>
+  {/* Limit the number of rows based on no_of_materials */}
+  {recipe.materials.slice(0, Math.min(recipe.no_of_materials, recipe.materials.length)).map((material) => (
+    <TableRow key={material.recipe_material_id} hover>
+      {/* Reorder Placeholder */}
+      <TableCell>
+        <IconButton size="small"><ArrowUpward fontSize="small" /></IconButton>
+        <IconButton size="small"><ArrowDownward fontSize="small" /></IconButton>
+      </TableCell>
 
+      {/* Material Dropdown */}
+      <TableCell>
+        <Select
+          fullWidth
+          value={selectedMaterialIds[material.material_id] || material.material_id}
+          onChange={(e) => {
+            const updatedMaterials = recipe.materials.map((mat) =>
+              mat.recipe_material_id === material.recipe_material_id
+                ? { ...mat, material_id: e.target.value }
+                : mat
+            );
+            setRecipe({ ...recipe, materials: updatedMaterials });
+          }}
+          size="small"
+        >
+          {storageOptions.map((matOpt) => (
+            <MenuItem key={matOpt.material_id} value={matOpt.material_id}>
+              {matOpt.title}
+            </MenuItem>
+          ))}
+        </Select>
+      </TableCell>
 
-                  {/* Material Dropdown */}
-                  <TableCell>
-                    <Select
-                      fullWidth
-                      value={selectedMaterialIds[material.material_id] || material.material_id}
-                      onChange={(e) => {
-                        const updatedMaterials = recipe.materials.map((mat) =>
-                          mat.recipe_material_id === material.recipe_material_id
-                            ? { ...mat, material_id: e.target.value }
-                            : mat
-                        );
-                        setRecipe({ ...recipe, materials: updatedMaterials });
-                      }}
-                      size="small"
-                    >
-                      {storageOptions.map((matOpt) => (
-                        <MenuItem key={matOpt.material_id} value={matOpt.material_id}>
-                          {matOpt.title}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </TableCell>
+      {/* Storage Dropdown */}
+      <TableCell>
+        <Select
+          fullWidth
+          value={material.storage || ''}
+          onChange={(e) => {
+            const updatedMaterials = recipe.materials.map((mat) =>
+              mat.recipe_material_id === material.recipe_material_id
+                ? { ...mat, storage: e.target.value }
+                : mat
+            );
+            setRecipe({ ...recipe, materials: updatedMaterials });
+          }}
+          displayEmpty
+          size="small"
+        >
+          <MenuItem value="" disabled>Select Storage</MenuItem>
+          {storageOptions.map((storage) => (
+            <MenuItem key={storage.id} value={storage.plant_area_location}>
+              {storage.plant_area_location}
+            </MenuItem>
+          ))}
+        </Select>
+      </TableCell>
 
-                   {/* Storage Dropdown */}
-                   <TableCell>
-                    <Select
-                      fullWidth
-                      value={material.storage || ''}
-                      onChange={(e) => {
-                        const updatedMaterials = recipe.materials.map((mat) =>
-                          mat.recipe_material_id === material.recipe_material_id
-                            ? { ...mat, storage: e.target.value }
-                            : mat
-                        );
-                        setRecipe({ ...recipe, materials: updatedMaterials });
-                      }}
-                      displayEmpty
-                      size="small"
-                    >
-                      <MenuItem value="" disabled>Select Storage</MenuItem>
-                      {storageOptions.map((storage) => (
-                        <MenuItem key={storage.id} value={storage.plant_area_location}>
-                          {storage.plant_area_location}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </TableCell>
+      {/* Set Point Input */}
+      <TableCell>
+        <TextField
+          fullWidth
+          type="number"
+          variant="outlined"
+          size="small"
+          value={material.set_point}
+          onChange={(e) => {
+            const updatedMaterials = recipe.materials.map((mat) =>
+              mat.recipe_material_id === material.recipe_material_id
+                ? { ...mat, set_point: e.target.value }
+                : mat
+            );
+            setRecipe({ ...recipe, materials: updatedMaterials });
+          }}
+        />
+      </TableCell>
 
-                  {/* Set Point Input */}
-                  <TableCell>
-                    <TextField
-                      fullWidth
-                      type="number"
-                      variant="outlined"
-                      size="small"
-                      value={material.set_point}
-                      onChange={(e) => {
-                        const updatedMaterials = recipe.materials.map((mat) =>
-                          mat.recipe_material_id === material.recipe_material_id
-                            ? { ...mat, set_point: e.target.value }
-                            : mat
-                        );
-                        setRecipe({ ...recipe, materials: updatedMaterials });
-                      }}
-                    />
-                  </TableCell>
+      {/* Status Dropdown */}
+      <TableCell>
+        <Select
+          fullWidth
+          value={material.status || ''}
+          onChange={(e) => {
+            const updatedMaterials = recipe.materials.map((mat) =>
+              mat.recipe_material_id === material.recipe_material_id
+                ? { ...mat, status: e.target.value }
+                : mat
+            );
+            setRecipe({ ...recipe, materials: updatedMaterials });
+          }}
+          size="small"
+        >
+          <MenuItem value="Released">Released</MenuItem>
+          <MenuItem value="Unreleased">Unreleased</MenuItem>
+        </Select>
+      </TableCell>
+    </TableRow>
+  ))}
+</TableBody>
 
-                  {/* Status Dropdown */}
-                  <TableCell>
-                    <Select
-                      fullWidth
-                      value={material.status || ''}
-                      onChange={(e) => {
-                        const updatedMaterials = recipe.materials.map((mat) =>
-                          mat.recipe_material_id === material.recipe_material_id
-                            ? { ...mat, status: e.target.value }
-                            : mat
-                        );
-                        setRecipe({ ...recipe, materials: updatedMaterials });
-                      }}
-                      size="small"
-                    >
-                      <MenuItem value="Released">Released</MenuItem>
-                      <MenuItem value="Unreleased">Unreleased</MenuItem>
-                    </Select>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
           </Table>
         ) : (
           <Typography>No materials available for this recipe.</Typography>

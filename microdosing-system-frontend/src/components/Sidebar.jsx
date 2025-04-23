@@ -32,7 +32,6 @@ export default function Sidebar() {
     { path: "/recipes", icon: FaClipboardList, label: "Formulas" },
     { path: "/activeorders", icon: FaShoppingCart, label: "Microdosing" },
     { path: "/batches", icon: FaLayerGroup, label: "Batches" },
-    { path: "/formula-details", icon: FaLayerGroup, label: "Formula Details" },
     { path: "/history", icon: FaHistory, label: "History" },
 
   ];

@@ -158,95 +158,130 @@ const FormulaDetails = () => {
     console.log(`Editing recipe: ${recipeId}`);
   };
 
-  const handleDelete = async (recipeId) => {
+  const handleDelete = async (e) => {
+    e.preventDefault();
+    console.log("🧨 handleDelete triggered");
+  
     try {
-      await axios.delete(
-        `http://127.0.0.1:5000/api/recipe_materials/${recipeId}`
-      );
-      alert("❌ Deleted recipe material");
-      setFormulaCreatedMap((prev) => ({
-        ...prev,
-        [recipeId]: false,
-      }));
+      const existingResponse = await axios.get("http://127.0.0.1:5000/api/recipe_materials");
+      const existingMaterials = existingResponse.data;
+      console.log("📦 Existing materials:", existingMaterials);
+  
+      const deletePromises = Object.keys(selectedMaterials).map(async (recipeId) => {
+        console.log(`🔁 Processing recipeId: ${recipeId}`);
+  
+        const materialName = selectedMaterials[recipeId];
+        console.log(`🎯 Material Name: ${materialName}`);
+  
+        const selectedMaterial = materials.find((m) => m.title === materialName);
+        if (!selectedMaterial) {
+          console.warn(`⚠️ Material not found for Recipe ID: ${recipeId}`);
+          return;
+        }
+  
+        const recipeIdInt = parseInt(recipeId, 10);
+        const materialIdInt = parseInt(selectedMaterial.material_id, 10);
+  
+        console.log(`Comparing: ${recipeIdInt} and ${materialIdInt}`);
+  
+        if (isNaN(recipeIdInt) || isNaN(materialIdInt)) {
+          console.warn(`⚠️ Invalid ID values for Recipe ID: ${recipeId}`);
+          return;
+        }
+  
+        const existingMatch = existingMaterials.find(
+          (item) =>
+            parseInt(item.recipe_id, 10) === recipeIdInt &&
+            parseInt(item.material_id, 10) === materialIdInt
+        );
+  
+        console.log("🔍 Match found:", existingMatch);
+  
+        if (!existingMatch) {
+          alert(`No matching recipe material found to delete for Recipe ID: ${recipeId}`);
+          return;
+        }
+  
+        console.log(`🗑 Deleting recipe_material_id: ${existingMatch.recipe_material_id}`);
+        await axios.delete(`http://127.0.0.1:5000/api/recipe_materials/${existingMatch.recipe_material_id}`);
+      });
+  
+      const validDeletePromises = deletePromises.filter(Boolean);
+      await Promise.all(validDeletePromises);
+  
+      alert("Selected recipe materials deleted successfully!");
+      setSetPoints({});
+      setSelectedMaterials({});
     } catch (error) {
-      console.error("Error deleting recipe material:", error);
+      console.error("🔥 Error deleting recipe materials:", error);
+      alert("Failed to delete some or all recipe materials.");
     }
   };
+  
+  
 
   const handleUpdate = async (e) => {
     e.preventDefault();
   
     try {
-      // Iterate through each selected material and send POST request
-      const postPromises = Object.keys(selectedMaterials).map(async (recipeMaterialId) => {
-        const materialName = selectedMaterials[recipeMaterialId];
-        const setPoint = setPoints[recipeMaterialId];
+      // Get all existing recipe_materials to match against
+      const existingResponse = await axios.get("http://127.0.0.1:5000/api/recipe_materials");
+      const existingMaterials = existingResponse.data;  // Assuming it's an array of recipe materials
   
-        // Ensure that materialName and setPoint exist before proceeding
+      const postPromises = Object.keys(selectedMaterials).map(async (recipeId) => {
+        const materialName = selectedMaterials[recipeId];
+        const setPoint = setPoints[recipeId];
+  
         if (!materialName || !setPoint) {
-          alert(`Missing values for material with ID: ${recipeMaterialId}`);
+          alert(`Missing values for material with Recipe ID: ${recipeId}`);
           return;
         }
   
         const selectedMaterial = materials.find((m) => m.title === materialName);
         if (!selectedMaterial) {
-          alert(`Material not found for ID: ${recipeMaterialId}`);
+          alert(`Material not found for Recipe ID: ${recipeId}`);
           return;
         }
   
-        // Convert recipeMaterialId and material_id to integers
-        const recipeMaterialIdInt = parseInt(recipeMaterialId, 10);
+        const recipeIdInt = parseInt(recipeId, 10);
         const materialIdInt = parseInt(selectedMaterial.material_id, 10);
   
-        if (isNaN(recipeMaterialIdInt) || isNaN(materialIdInt)) {
-          alert(`Invalid integer value for recipe_id or material_id`);
+        if (isNaN(recipeIdInt) || isNaN(materialIdInt)) {
+          alert(`Invalid ID values`);
           return;
         }
   
-        // Check if the recipe already exists
-        const checkResponse = await axios.get(
-          `http://127.0.0.1:5000/api/recipe_materials/${recipeMaterialIdInt}`
+        // Check if combination already exists
+        const existingMatch = existingMaterials.find(
+          (item) => item.recipe_id === recipeIdInt && item.material_id === materialIdInt
         );
   
-        // If the recipe exists, we will update it
         const payload = {
-          recipe_id: recipeMaterialIdInt,  // Convert recipeMaterialId to integer
-          material_id: materialIdInt,      // Convert material_id to integer
+          recipe_id: recipeIdInt,
+          material_id: materialIdInt,
           set_point: parseFloat(setPoint),
-          actual: 0,  // Set the actual value as needed (use 0 or adjust based on your needs)
-          status: "Released",  // Example status
+          actual: 0,
+          status: "Released",
         };
   
-        if (checkResponse.status === 200) {
-          // If recipe exists, update it
-          console.log("Recipe exists, updating...", payload);
-          return axios.put(
-            `http://127.0.0.1:5000/api/recipe_materials/${recipeMaterialIdInt}`,  // PUT request to update the material
-            payload
-          );
-        } else {
-          // If recipe does not exist, create a new one
-          console.log("Recipe does not exist, creating...", payload);
-          return axios.post(
-            `http://127.0.0.1:5000/api/recipe_materials`,  // POST request to create a new material
-            payload
-          );
-        }
+        console.log(existingMatch ? "Updating..." : "Creating...", payload);
+  
+        // Regardless, POST to the same endpoint — the backend handles update if found
+        return axios.post("http://127.0.0.1:5000/api/recipe_materials", payload);
       });
   
-      // Filter out any null or undefined promises that were skipped due to missing data
-      const validPostPromises = postPromises.filter(promise => promise !== undefined);
-  
-      // Wait for all post requests to complete
+      const validPostPromises = postPromises.filter(Boolean);
       await Promise.all(validPostPromises);
   
       alert("All recipe materials processed successfully!");
-      navigate("/formula-details");
+      setSetPoints({});
+setSelectedMaterials({});
     } catch (error) {
       console.error("Error creating or updating recipe materials:", error);
       alert("Failed to create or update some or all recipe materials.");
     }
   };
+  
   
   
   
@@ -268,7 +303,6 @@ const FormulaDetails = () => {
               <TableCell>Material</TableCell>
               <TableCell>Set Point</TableCell>
               <TableCell>Margin</TableCell>
-              <TableCell>Status</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -382,9 +416,6 @@ const FormulaDetails = () => {
                     />
                   </TableCell>
                   <TableCell>
-                    {formulaCreatedMap[recipeId] ? "Saved" : "Pending"}
-                  </TableCell>
-                  <TableCell>
                     <Box display="flex" gap={1}>
                       <Tooltip title="Edit">
                       <IconButton
@@ -412,7 +443,7 @@ const FormulaDetails = () => {
                       </IconButton>
                       <Tooltip title="Delete">
                         <IconButton
-                          onClick={() => handleDelete(recipeId)}
+                          onClick={handleDelete}
                           sx={{
                             backgroundColor: "#d32f2f",
                             color: "#fff",

@@ -44,7 +44,7 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import RecipeMaterialsTable from "./RecipeMaterialsTable";
-
+import FormulaDetails from "./FormulaDetails";
 
 const Recipes = () => {
   const navigate = useNavigate();
@@ -59,7 +59,6 @@ const Recipes = () => {
     materials: [],
     no_of_materials: "",
   });
-
   
 
   const [recipes, setRecipes] = useState([]);
@@ -428,7 +427,7 @@ const MySwal = withReactContent(Swal);
                       }}
                       size="medium"
                       onClick={() =>
-                        navigate(`/recipes/edit/${recipe.recipe_id}`)
+                        navigate(`/formula-details/edit/${recipe.recipe_id}`)
                       }
                     >
                       <EditIcon />
@@ -474,12 +473,12 @@ const MySwal = withReactContent(Swal);
 
       {/* <RecipeMaterialsTable /> */}
 
+
       {/* Create Recipe Dialog */}
       <Dialog
         open={openDialog}
         onClose={handleCloseDialog}
-        maxWidth="md"
-        fullWidth
+        maxWidth={false}
       >
         <DialogTitle>
           <Box
@@ -494,7 +493,10 @@ const MySwal = withReactContent(Swal);
           </Box>
         </DialogTitle>
 
-        <DialogContent dividers>
+        <DialogContent dividers sx={{
+      width: "730px", // Custom width
+      maxWidth: "100%", // Prevent overflow
+    }}>
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
             <Grid container spacing={3}>
               {/* Recipe Name */}
@@ -557,8 +559,23 @@ const MySwal = withReactContent(Swal);
                 </FormControl>
               </Grid>
 
-              {/* Description */}
+
               <Grid item xs={12}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Number of Materials
+                </Typography>
+                <TextField
+                  fullWidth
+                  name="no_of_materials"
+                  type="number"
+                  value={formData.no_of_materials}
+                  onChange={handleChange}
+                  sx={{ minWidth: "350px", height:"50px" }}
+                />
+              </Grid>
+
+               {/* Description */}
+               <Grid item xs={12}>
                 <Typography variant="subtitle2" gutterBottom>
                   Description
                 </Typography>
@@ -566,12 +583,13 @@ const MySwal = withReactContent(Swal);
                   fullWidth
                   name="description"
                   multiline
-                  rows={3}
+                  rows={2}
                   value={formData.description}
                   onChange={handleChange}
-                  sx={{ minWidth: "450px" }}
+                  sx={{ minWidth: "630px", }}
                 />
               </Grid>
+
 
               {/* Barcode Section */}
 
@@ -588,6 +606,7 @@ const MySwal = withReactContent(Swal);
                     fullWidth
                     value={formData.barcode_id || ""}
                     InputProps={{ readOnly: true }}
+                    sx={{ minWidth: "250px" }}
                   />
                   <Button
                     variant="contained"
@@ -599,22 +618,10 @@ const MySwal = withReactContent(Swal);
                 </Box>
               </Grid>
 
-              <Grid item xs={12}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Number of Materials
-                </Typography>
-                <TextField
-                  fullWidth
-                  name="no_of_materials"
-                  type="number"
-                  value={formData.no_of_materials}
-                  onChange={handleChange}
-                  sx={{ minWidth: "450px" }}
-                />
-              </Grid>
+              
 
               {/* Barcode Image Preview */}
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} md={6} sx={{ marginTop : "40px"}}>
                 <Typography variant="subtitle2" gutterBottom>
                   Barcode Preview
                 </Typography>
@@ -623,17 +630,18 @@ const MySwal = withReactContent(Swal);
                     border: 1,
                     borderColor: "divider",
                     p: 2,
-                    height: 100,
+                    height: 50,
+                    width : 250,
                     display: "flex",
                     justifyContent: "center",
-                    alignItems: "center",
+                    alignItems: "center"
                   }}
                 >
                   {barcodeImage ? (
                     <Avatar
                       variant="square"
                       src={barcodeImage}
-                      sx={{ width: "100%", height: "100%", minWidth: "340px" }}
+                      sx={{ width: "100%", height: "100%", minWidth: "200px" }}
                     />
                   ) : (
                     <Typography color="text.secondary">

@@ -156,6 +156,7 @@ def get_recipe(recipe_id):
         "version": recipe.version,
         "status": recipe.status,
         "created_by": recipe.created_by,
+        "no_of_materials" : recipe.no_of_materials,
     }
     return jsonify(result)
 
@@ -267,7 +268,7 @@ def create_or_update_recipe_material():
             margin = round(((float(set_point) - float(actual)) / float(set_point)) * 100, 2)
 
         # Check for existing recipe material
-        existing_recipe_material = RecipeMaterial.query.filter_by(recipe_id=recipe_id).first()
+        existing_recipe_material = RecipeMaterial.query.filter_by(recipe_id=recipe_id, material_id=material_id).first()
 
         if existing_recipe_material:
             # Update existing record
